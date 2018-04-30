@@ -8,20 +8,41 @@ logging.disable(logging.CRITICAL)
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36',
 }
+class Color:
+   PURPLE = '\033[95m'
+   CYAN = '\033[96m'
+   DARKCYAN = '\033[36m'
+   BLUE = '\033[94m'
+   GREEN = '\033[92m'
+   YELLOW = '\033[93m'
+   RED = '\033[91m'
+   BOLD = '\033[1m'
+   UNDERLINE = '\033[4m'
+   END = '\033[0m'
 
 class Team:
-    def __init__(self, name, members):
+    def __init__(self, name, points):
         self.name = name
-        self.members = members
+        self.points = points
 
 #get the top team given a url
-def getTopTeam(url):
+def getTopTeams(url):
     res = requests.get(url, headers = headers)
     res.raise_for_status()
     soup = bs4.BeautifulSoup(res.text, 'html.parser')
-    elems = soup.select('body > div.bgPadding > div > div.colCon > div.contentCol > div > div:nth-of-type(1) > div:nth-of-type(4) > div > div.header > span.name.js-link')
-    team = Team(elems[0].text, '')
-    return team
+    #elems = soup.select('body > div.bgPadding > div > div.colCon > div.contentCol > div > div:nth-of-type(1) > div:nth-of-type(4) > div > div.header > span.name.js-link')
+    #team = Team(elems[0].text, '', '')
+
+    teams = []
+
+    teamDivs = soup.find_all('div', {'class': 'ranked-team standard-box'}) # Get all ranked teams divs
+    for teamDiv in teamDivs:
+        name = teamDiv.find('span', {'class': 'name js-link'})
+        points = teamDiv.find('span', {'class': 'points'})
+        team = Team(name.text, points.text)
+        teams.append(team)
+    
+    return teams
 
 #Get all of the possible months given a year
 def getPossibleMonths(year):
@@ -38,7 +59,7 @@ def getPossibleMonths(year):
         if(child.text.strip() == year):
             yearLink = child['href']
 
-    url = "https://www.hltv.org" + yearLink
+    url = baseUrl + yearLink
 
     res = requests.get(url, headers = headers) # Go to the rankings of 'year'
     res.raise_for_status()
@@ -61,40 +82,43 @@ baseUrl = "https://www.hltv.org"
 possibleYears = ['2018', '2017', '2016', '2015']
 
 year = ''
-month = ""
+month = ''
+maxRank = -1
 
-formattedYears = ', '.join(possibleYears)
+formattedYears = '(' + ', '.join(possibleYears) + '): '
 
-yearMessage = "Enter a Year | ("+ formattedYears + "): "
+yearMessage = "Enter a Year | "+ formattedYears
 
-userInput = True
-while userInput:
+while True:
      year = str(input(yearMessage))
      if(year not in possibleYears):
         print("Invalid Year")
      else:
-        userInput = False
+        break#userInput = False
 
 possibleMonths = getPossibleMonths(year)
 
-
-formattedMonths = ', '.join(possibleMonths)
-monthMessage = "Enter a Month | (" + formattedMonths + "): "
+formattedMonths = '(' + ', '.join(possibleMonths)+ '): '
+monthMessage = "Enter a Month | " + formattedMonths
 
 userInput = True
 
-while userInput:
+while True:
      try:   
          month = str(input(monthMessage))
          value = possibleMonths[month]
-         userInput = False # this line only gets executed if key is valid, since otherwise an exception is thrown
+         break # this line only gets executed if key is valid, since otherwise an exception is thrown
      except:
          print("Invalid Month")
 
-print("\nTop team of {} in {}: ".format(month, year))
+print("\nTop Ranked Teams of {} in {} are: ".format(month, year))
 
-team = getTopTeam(baseUrl + possibleMonths[month])
-print(team.name)
+teams = getTopTeams(baseUrl + possibleMonths[month])
+
+for i in range(1, len(teams) + 1):
+    print(str(i) + '. ' + teams[i -1].name + ' ' + teams[i -1].points)
+    if(i == 10):
+        print('-' * 30)
 
 
 
