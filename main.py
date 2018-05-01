@@ -1,24 +1,13 @@
 #! python3
 
-import bs4, requests, logging
+import bs4, requests, logging, os
 logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s- %(message)s')
 
-logging.disable(logging.CRITICAL)
+#logging.disable(logging.CRITICAL)
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36',
 }
-class Color:
-   PURPLE = '\033[95m'
-   CYAN = '\033[96m'
-   DARKCYAN = '\033[36m'
-   BLUE = '\033[94m'
-   GREEN = '\033[92m'
-   YELLOW = '\033[93m'
-   RED = '\033[91m'
-   BOLD = '\033[1m'
-   UNDERLINE = '\033[4m'
-   END = '\033[0m'
 
 class Team:
     def __init__(self, name, points):
@@ -30,8 +19,6 @@ def getTopTeams(url):
     res = requests.get(url, headers = headers)
     res.raise_for_status()
     soup = bs4.BeautifulSoup(res.text, 'html.parser')
-    #elems = soup.select('body > div.bgPadding > div > div.colCon > div.contentCol > div > div:nth-of-type(1) > div:nth-of-type(4) > div > div.header > span.name.js-link')
-    #team = Team(elems[0].text, '', '')
 
     teams = []
 
@@ -43,6 +30,16 @@ def getTopTeams(url):
         teams.append(team)
     
     return teams
+
+def getFormattedResults(teams):
+    results = []
+    for i in range(1, len(teams) + 1):
+        results.append(str(i) + '. ' + teams[i -1].name + ' ' + teams[i -1].points)
+        if(i == 10):
+            results.append('-' * 30)
+            
+    return results
+    
 
 #Get all of the possible months given a year
 def getPossibleMonths(year):
@@ -83,7 +80,7 @@ possibleYears = ['2018', '2017', '2016', '2015']
 
 year = ''
 month = ''
-maxRank = -1
+maxRank = -1 # TODO: implement max ranks
 
 formattedYears = '(' + ', '.join(possibleYears) + '): '
 
@@ -94,14 +91,12 @@ while True:
      if(year not in possibleYears):
         print("Invalid Year")
      else:
-        break#userInput = False
+        break
 
 possibleMonths = getPossibleMonths(year)
 
 formattedMonths = '(' + ', '.join(possibleMonths)+ '): '
 monthMessage = "Enter a Month | " + formattedMonths
-
-userInput = True
 
 while True:
      try:   
@@ -115,11 +110,30 @@ print("\nTop Ranked Teams of {} in {} are: ".format(month, year))
 
 teams = getTopTeams(baseUrl + possibleMonths[month])
 
-for i in range(1, len(teams) + 1):
-    print(str(i) + '. ' + teams[i -1].name + ' ' + teams[i -1].points)
-    if(i == 10):
-        print('-' * 30)
+results = getFormattedResults(teams)
+for item in results:
+    print(item)
+    
+response = ''
 
+# Change the working directory to where the script is located
+abspath = os.path.abspath(__file__) 
+dname = os.path.dirname(abspath)
+os.chdir(dname)
+
+
+directory = 'output\\'
+fileName = 'Teams of {} in {}'
+
+if not os.path.exists(directory):
+    os.mkdir(directory)
+
+txtFile = open(directory + fileName.format(month, year) + '.txt', 'w')
+
+for item in results:
+    txtFile.write(item + '\n')
+
+txtFile.close()
 
 
 
