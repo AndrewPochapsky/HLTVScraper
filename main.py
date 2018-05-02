@@ -31,16 +31,6 @@ def getTopTeams(url):
     
     return teams
 
-def getFormattedResults(teams):
-    results = []
-    for i in range(1, len(teams) + 1):
-        results.append(str(i) + '. ' + teams[i -1].name + ' ' + teams[i -1].points)
-        if(i == 10):
-            results.append('-' * 30)
-            
-    return results
-    
-
 #Get all of the possible months given a year
 def getPossibleMonths(year):
     res = requests.get(baseUrl + '/ranking/teams/', headers = headers) # Go to the most recent rankings
@@ -53,7 +43,7 @@ def getPossibleMonths(year):
     yearLink = ''
     yearsDivChildren = yearsDiv.find_all('a') # get all of the children of that div
     for child in yearsDivChildren:
-        if(child.text.strip() == year):
+        if child.text.strip() == year:
             yearLink = child['href']
 
     url = baseUrl + yearLink
@@ -74,13 +64,24 @@ def getPossibleMonths(year):
 
     return monthsDictionary
 
+#Returns list of formatted results: 'X. Name (points)'
+def getFormattedResults(teams):
+    results = []
+    for i in range(1, len(teams) + 1):
+        results.append(str(i) + '. ' + teams[i -1].name + ' ' + teams[i -1].points)
+        if i == 10:
+            results.append('-' * 30)
+            
+    return results
+
 baseUrl = "https://www.hltv.org" 
 
-possibleYears = ['2018', '2017', '2016', '2015']
+possibleYears = ['2018', '2017', '2016', '2015'] # TODO: consider getting the years dynamically from HLTV
 
 year = ''
 month = ''
 maxRank = -1 # TODO: implement max ranks
+saveToFile = None # bool
 
 formattedYears = '(' + ', '.join(possibleYears) + '): '
 
@@ -88,7 +89,7 @@ yearMessage = "Enter a Year | "+ formattedYears
 
 while True:
      year = str(input(yearMessage))
-     if(year not in possibleYears):
+     if year not in possibleYears:
         print("Invalid Year")
      else:
         break
@@ -105,36 +106,44 @@ while True:
          break # this line only gets executed if key is valid, since otherwise an exception is thrown
      except:
          print("Invalid Month")
-
-print("\nTop Ranked Teams of {} in {} are: ".format(month, year))
+         
+response = ''
+while True:
+    response = str(input("Save to file(y/n): "))
+    logging.debug('response: ' + response)
+    if response != 'y' and response != 'n':
+        print("Invalid response")
+    else:
+        break
+saveToFile = (response == 'y') # if response is 'y' then save to file
 
 teams = getTopTeams(baseUrl + possibleMonths[month])
-
 results = getFormattedResults(teams)
-for item in results:
-    print(item)
-    
-response = ''
 
-# Change the working directory to where the script is located
-abspath = os.path.abspath(__file__) 
-dname = os.path.dirname(abspath)
-os.chdir(dname)
+if not saveToFile:
+    print("\nTop Ranked Teams of {} in {} are: ".format(month, year))
+    for item in results:
+        print(item)
+        
+else: 
+    # Change the working directory to where the script is located
+    abspath = os.path.abspath(__file__) 
+    dname = os.path.dirname(abspath)
+    os.chdir(dname)
 
+    directory = 'output\\'
+    fileName = '{}-{}'.format(month, year) + '.txt'
 
-directory = 'output\\'
-fileName = 'Teams of {} in {}'
+    if not os.path.exists(directory):
+        os.mkdir(directory)
 
-if not os.path.exists(directory):
-    os.mkdir(directory)
+    txtFile = open(directory + fileName, 'w')
 
-txtFile = open(directory + fileName.format(month, year) + '.txt', 'w')
-
-for item in results:
-    txtFile.write(item + '\n')
-
-txtFile.close()
-
+    for item in results:
+        txtFile.write(item + '\n')
+ 
+    txtFile.close()
+    print('Data saved to ' + os.path.abspath(directory + fileName))
 
 
 
