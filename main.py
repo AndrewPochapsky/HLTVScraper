@@ -10,54 +10,92 @@ headers = {
 }
 
 class Team:
-    def __init__(self, name, points):
+    def __init__(self, name, points, players):
         self.name = name
         self.points = points
+        self.players = players
 
 #get the top team given a url
 def getTopTeams(url):
     res = requests.get(url, headers = headers)
     res.raise_for_status()
     soup = bs4.BeautifulSoup(res.text, 'html.parser')
-
+    
+    #teams to be returned
     teams = []
 
-    teamDivs = soup.find_all('div', {'class': 'ranked-team standard-box'}) # Get all ranked teams divs
-    for teamDiv in teamDivs:
-        name = teamDiv.find('span', {'class': 'name js-link'})
-        points = teamDiv.find('span', {'class': 'points'})
-        team = Team(name.text, points.text)
-        teams.append(team)
+    #Team components
+    teamNames = []
+    teamPoints = []
+    playerNames = []
+    # Get all ranked teams divs
+    teamDivs = soup.find_all('div', {'class': 'ranked-team standard-box'})
     
+    playerHolders =  soup.find_all('td', {'class': 'player-holder'})
+
+    #Get the team names
+    for teamDiv in teamDivs:
+        teamName = teamDiv.find('span', {'class': 'js-link'})
+        points = teamDiv.find('span', {'class': 'points'})
+        teamMembers = []
+
+        playerHolders = teamDiv.find_all('td', {'class': 'player-holder'})
+
+        #Get the players for the team
+        for playerHolder in playerHolders:
+            playerName = playerHolder.find('span', {'class': 'js-link'})
+            #logging.debug('playerName: '+name.text)
+            teamMembers.append(playerName.text)
+
+        playerNames.append(teamMembers)
+        teamNames.append(teamName.text)
+        teamPoints.append(points.text)                    
+
+    #Get the team members
+    for i in range(len(teamNames)):
+        #logging.debug(playerNames[i])
+        team = Team(teamNames[i], teamPoints[i], playerNames[i])
+        teams.append(team)
+                                
     return teams
 
 #Get all of the possible months given a year
 def getPossibleMonths(year):
-    res = requests.get(baseUrl + '/ranking/teams/', headers = headers) # Go to the most recent rankings
+    
+    # Go to the most recent rankings
+    res = requests.get(baseUrl + '/ranking/teams/', headers = headers) 
     res.raise_for_status()
     soup = bs4.BeautifulSoup(res.text, 'html.parser')
-
-    divs = soup.find_all("div", {"class": "filter-column-content"}) # find all divs with this class
-    yearsDiv = divs[0]  # select the first one as that is the one that holds the years
+    
+    # find all divs with this class
+    divs = soup.find_all("div", {"class": "filter-column-content"})
+    # select the first one as that is the one that holds the years
+    yearsDiv = divs[0] 
 
     yearLink = ''
-    yearsDivChildren = yearsDiv.find_all('a') # get all of the children of that div
+    # get all of the children of that div
+    yearsDivChildren = yearsDiv.find_all('a') 
     for child in yearsDivChildren:
         if child.text.strip() == year:
             yearLink = child['href']
 
     url = baseUrl + yearLink
 
-    res = requests.get(url, headers = headers) # Go to the rankings of 'year'
+    # Go to the rankings of 'year'
+    res = requests.get(url, headers = headers) 
     res.raise_for_status()
     soup = bs4.BeautifulSoup(res.text, 'html.parser')
 
-    divs = soup.find_all("div", {"class": "filter-column-content"}) # find all divs with this class
-    monthsDiv = divs[1] # select the second one as that is the one that holds the months 
-    
-    monthsDivChildren = monthsDiv.find_all('a') # get all of the children of that div
+    # find all divs with this class
+    divs = soup.find_all("div", {"class": "filter-column-content"})
+    # select the second one as that is the one that holds the months 
+    monthsDiv = divs[1] 
 
-    monthsDictionary = {} # key = month, value = href
+    # get all of the children of that div
+    monthsDivChildren = monthsDiv.find_all('a') 
+
+    # key = month, value = href
+    monthsDictionary = {} 
     
     for a in monthsDivChildren:
         monthsDictionary[a.text.strip()] = a['href']
@@ -68,7 +106,7 @@ def getPossibleMonths(year):
 def getFormattedResults(teams):
     results = []
     for i in range(1, len(teams) + 1):
-        results.append(str(i) + '. ' + teams[i -1].name + ' ' + teams[i -1].points)
+        results.append(str(i) + '. ' + teams[i -1].name + ' (' + ','.join(teams[i -1].players)+') ' + str(teams[i -1].points))
         if i == 10:
             results.append('-' * 30)
             
@@ -115,7 +153,8 @@ while True:
         print("Invalid response")
     else:
         break
-saveToFile = (response == 'y') # if response is 'y' then save to file
+# if response is 'y' then save to file
+saveToFile = (response == 'y')
 
 teams = getTopTeams(baseUrl + possibleMonths[month])
 results = getFormattedResults(teams)
