@@ -3,7 +3,7 @@
 import bs4, requests, logging, os
 logging.basicConfig(level=logging.DEBUG, format=' %(asctime)s - %(levelname)s- %(message)s')
 
-#logging.disable(logging.CRITICAL)
+logging.disable(logging.CRITICAL)
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36',
@@ -44,16 +44,14 @@ def getTopTeams(url):
         #Get the players for the team
         for playerHolder in playerHolders:
             playerName = playerHolder.find('span', {'class': 'js-link'})
-            #logging.debug('playerName: '+name.text)
             teamMembers.append(playerName.text)
 
         playerNames.append(teamMembers)
         teamNames.append(teamName.text)
         teamPoints.append(points.text)                    
 
-    #Get the team members
+    #Create the team objects
     for i in range(len(teamNames)):
-        #logging.debug(playerNames[i])
         team = Team(teamNames[i], teamPoints[i], playerNames[i])
         teams.append(team)
                                 
@@ -106,7 +104,7 @@ def getPossibleMonths(year):
 def getFormattedResults(teams):
     results = []
     for i in range(1, len(teams) + 1):
-        results.append(str(i) + '. ' + teams[i -1].name + ' (' + ','.join(teams[i -1].players)+') ' + str(teams[i -1].points))
+        results.append(str(i) + '. ' + teams[i -1].name + ' | (' + ', '.join(teams[i -1].players)+') | ' + str(teams[i -1].points))
         if i == 10:
             results.append('-' * 30)
             
