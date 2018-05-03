@@ -118,70 +118,81 @@ year = ''
 month = ''
 maxRank = -1 # TODO: implement max ranks
 saveToFile = None # bool
+running = True
 
 formattedYears = '(' + ', '.join(possibleYears) + '): '
 
 yearMessage = "Enter a Year | "+ formattedYears
 
-while True:
-     year = str(input(yearMessage))
-     if year not in possibleYears:
-        print("Invalid Year")
-     else:
-        break
+while running:
 
-possibleMonths = getPossibleMonths(year)
+    while True:
+         year = str(input(yearMessage))
+         if year not in possibleYears:
+            print("Invalid Year")
+         else:
+            break
 
-formattedMonths = '(' + ', '.join(possibleMonths)+ '): '
-monthMessage = "Enter a Month | " + formattedMonths
+    possibleMonths = getPossibleMonths(year)
 
-while True:
-     try:   
-         month = str(input(monthMessage))
-         value = possibleMonths[month]
-         break # this line only gets executed if key is valid, since otherwise an exception is thrown
-     except:
-         print("Invalid Month")
-         
-response = ''
-while True:
-    response = str(input("Save to file(y/n): "))
-    logging.debug('response: ' + response)
-    if response != 'y' and response != 'n':
-        print("Invalid response")
-    else:
-        break
-# if response is 'y' then save to file
-saveToFile = (response == 'y')
+    formattedMonths = '(' + ', '.join(possibleMonths)+ '): '
+    monthMessage = "Enter a Month | " + formattedMonths
 
-teams = getTopTeams(baseUrl + possibleMonths[month])
-results = getFormattedResults(teams)
+    while True:
+         try:   
+             month = str(input(monthMessage))
+             value = possibleMonths[month]
+             break # this line only gets executed if key is valid, since otherwise an exception is thrown
+         except:
+             print("Invalid Month")
+             
+    response = ''
+    while True:
+        response = str(input("Save to file(y/n): "))
+        logging.debug('response: ' + response)
+        if response != 'y' and response != 'n':
+            print("Invalid response")
+        else:
+            break
+    # if response is 'y' then save to file
+    saveToFile = (response == 'y')
 
-if not saveToFile:
-    print("\nTop Ranked Teams of {} in {} are: ".format(month, year))
-    for item in results:
-        print(item)
-        
-else: 
-    # Change the working directory to where the script is located
-    abspath = os.path.abspath(__file__) 
-    dname = os.path.dirname(abspath)
-    os.chdir(dname)
+    teams = getTopTeams(baseUrl + possibleMonths[month])
+    results = getFormattedResults(teams)
 
-    directory = 'output\\'
-    fileName = '{}-{}'.format(month, year) + '.txt'
+    if not saveToFile:
+        print("\nTop Ranked Teams of {} in {} are: ".format(month, year))
+        for item in results:
+            print(item)
+            
+    else: 
+        # Change the working directory to where the script is located
+        abspath = os.path.abspath(__file__) 
+        dname = os.path.dirname(abspath)
+        os.chdir(dname)
 
-    if not os.path.exists(directory):
-        os.mkdir(directory)
+        directory = 'output\\'
+        fileName = '{}-{}'.format(month, year) + '.txt'
 
-    txtFile = open(directory + fileName, 'w')
+        if not os.path.exists(directory):
+            os.mkdir(directory)
 
-    for item in results:
-        txtFile.write(item + '\n')
- 
-    txtFile.close()
-    print('Data saved to ' + os.path.abspath(directory + fileName))
+        txtFile = open(directory + fileName, 'w')
 
-
+        for item in results:
+            txtFile.write(item + '\n')
+     
+        txtFile.close()
+        print('Data saved to ' + os.path.abspath(directory + fileName))
+    
+    while True:
+        response = (str(input('Query again(y/n): ')))
+        if response != 'y' and response != 'n':
+            print("Invalid response")
+        elif response == 'n':
+            running = False
+            break
+        else:
+            break
 
 
