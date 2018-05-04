@@ -76,7 +76,9 @@ def getPossibleMonths(year):
     for child in yearsDivChildren:
         if child.text.strip() == year:
             yearLink = child['href']
+            break
 
+    #This url is for the year specified by user
     url = baseUrl + yearLink
 
     # Go to the rankings of 'year'
@@ -100,7 +102,7 @@ def getPossibleMonths(year):
 
     return monthsDictionary
 
-#Returns list of formatted results: 'X. Name (points)'
+#Returns list of formatted results: 'X. Name | (member1, member2, ...)(points)'
 def getFormattedResults(teams):
     results = []
     for i in range(1, len(teams) + 1):
@@ -110,14 +112,23 @@ def getFormattedResults(teams):
             
     return results
 
+#Returns true if user inputs 'y', if 'n' then return false
+def yesOrNoResponse(message):
+     while True:
+        response = str(input(message))
+        if response != 'y' and response != 'n':
+            print("Invalid response")
+        else:
+            return response == 'y'
+    
+
 baseUrl = "https://www.hltv.org" 
 
 possibleYears = ['2018', '2017', '2016', '2015'] # TODO: consider getting the years dynamically from HLTV
 
 year = ''
 month = ''
-maxRank = -1 # TODO: implement max ranks
-saveToFile = None # bool
+saveToFile = None
 running = True
 
 formattedYears = '(' + ', '.join(possibleYears) + '): '
@@ -146,16 +157,7 @@ while running:
          except:
              print("Invalid Month")
              
-    response = ''
-    while True:
-        response = str(input("Save to file(y/n): "))
-        logging.debug('response: ' + response)
-        if response != 'y' and response != 'n':
-            print("Invalid response")
-        else:
-            break
-    # if response is 'y' then save to file
-    saveToFile = (response == 'y')
+    saveToFile = yesOrNoResponse('Save to file(y/n): ')
 
     teams = getTopTeams(baseUrl + possibleMonths[month])
     results = getFormattedResults(teams)
@@ -163,8 +165,7 @@ while running:
     if not saveToFile:
         print("\nTop Ranked Teams of {} in {} are: ".format(month, year))
         for item in results:
-            print(item)
-            
+            print(item)       
     else: 
         # Change the working directory to where the script is located
         abspath = os.path.abspath(__file__) 
@@ -184,15 +185,5 @@ while running:
      
         txtFile.close()
         print('Data saved to ' + os.path.abspath(directory + fileName))
-    
-    while True:
-        response = (str(input('Query again(y/n): ')))
-        if response != 'y' and response != 'n':
-            print("Invalid response")
-        elif response == 'n':
-            running = False
-            break
-        else:
-            break
 
-
+    running = yesOrNoResponse('Query again(y/n): ')
